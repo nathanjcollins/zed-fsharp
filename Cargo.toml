@@ -1,5 +1,5 @@
 [package]
-name = "zed-fsharp-extension"
+name = "zed_fsharp"
 version = "0.1.0"
 edition = "2021"
 
