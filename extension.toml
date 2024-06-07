@@ -4,7 +4,7 @@ description = "F# language support for Zed"
 version = "0.0.1"
 schema_version = 1
 authors = ["Nathan Collins <nathjcollins@gmail.com>"]
-repository = "https://github.com/nathanjcollins/zed-fsharp-extension"
+repository = "https://github.com/nathanjcollins/zed-fsharp"
 
 [language_servers.fsautocomplete]
 name = "fsautocomplete"
