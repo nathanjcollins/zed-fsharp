@@ -2,7 +2,7 @@ name = "FSharp"
 code_fence_block_name = "fsharp"
 grammar = "fsharp"
 path_suffixes = ["fs"]
-line_comments = ["// "]
+line_comments = ["// ", "/// "]
 autoclose_before = ";:.,=}])>"
 brackets = [
     { start = "{", end = "}", close = true, newline = true },
