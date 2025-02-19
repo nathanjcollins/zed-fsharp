@@ -4,9 +4,9 @@
 [
   (line_comment)
   (block_comment)
-] @comment @spell
+] @comment
 
-(xml_doc) @comment.documentation @spell
+(xml_doc) @comment.documentation
 
 ((const) @constant
  (#set! "priority" 90))
