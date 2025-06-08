@@ -286,12 +286,13 @@
   "member"
 ] @keyword.function
 
-[
-  "enum"
-  "type"
-  "inherit"
-  "interface"
-] @keyword.type
+; commenting this out as zed seems to be doing something weird with the highlighting
+; [
+;   "enum"
+;   "type"
+;   "inherit"
+;   "interface"
+; ] @keyword.type
 
 [
   "try"
@@ -325,7 +326,10 @@
   "val"
   "module"
   "namespace"
+  "enum"
   "type"
+  "inherit"
+  "interface"
 ] @keyword
 
 (long_identifier
