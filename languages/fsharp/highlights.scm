@@ -325,6 +325,7 @@
   "val"
   "module"
   "namespace"
+  "type"
 ] @keyword
 
 (long_identifier
