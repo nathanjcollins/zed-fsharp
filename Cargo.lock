@@ -762,6 +762,7 @@ dependencies = [
 name = "zed_fsharp"
 version = "0.1.0"
 dependencies = [
+ "semver",
  "serde",
  "zed_extension_api",
 ]
