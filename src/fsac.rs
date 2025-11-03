@@ -4,6 +4,11 @@ use semver::Version;
 use zed_extension_api::http_client::{HttpMethod, HttpRequest};
 use zed_extension_api::{self as zed, EnvVars, Os, Worktree, LanguageServerInstallationStatus,serde_json, DownloadedFileType};
 
+pub struct FsacAcquisition {
+    pub fsac_path: PathBuf,
+    pub env: EnvVars,
+}
+
 #[derive(serde::Deserialize)]
 struct PackageVersionList {
     versions: Vec<String>,
@@ -152,7 +157,15 @@ fn select_compatible_tmfs(
     }
 }
 
-pub fn acquire_fsac(language_server_id: &zed::LanguageServerId, worktree: &Worktree) -> zed::Result<PathBuf> {
+fn tfm_for_sdk_version(version: &Version) -> String {
+    format!("net{}.0", version.major)
+}
+
+pub fn acquire_fsac(
+    language_server_id: &zed::LanguageServerId,
+    worktree: &Worktree,
+    custom_args: &Vec<String>,
+) -> zed::Result<FsacAcquisition> {
     let (os, _) = zed::current_platform();
 
     zed::set_language_server_installation_status(
@@ -187,7 +200,35 @@ pub fn acquire_fsac(language_server_id: &zed::LanguageServerId, worktree: &Workt
 
     let available_tmfs = get_fsac_tmfs_path(&last_version)?;
 
+
     let selected_tmf = select_compatible_tmfs(&dotnet_version, &available_tmfs)?;
+
+    let sdk_tfm = tfm_for_sdk_version(&dotnet_version);
+
+    let has_user_roll_forward = custom_args.iter().any(|a| a == "--roll-forward");
+    let has_user_fx_version = custom_args.iter().any(|a| a == "--fx-version");
+
+    let should_apply_implicit_roll_forward =
+        !has_user_fx_version && !has_user_roll_forward && sdk_tfm != selected_tmf;
+
+    println!("Determined SDK TFM: {}", &sdk_tfm);
+    println!("Selected FSAC TFM: {}", &selected_tmf);
+    if should_apply_implicit_roll_forward {
+        println!("SDK version is higher than FSAC version, and no roll-forward policy is set. Applying implicit roll-forward.");
+    }
+
+    let mut env_variables = worktree.shell_env();
+    if should_apply_implicit_roll_forward {
+        env_variables.push(("DOTNET_ROLL_FORWARD".to_string(), "LatestMajor".to_string()));
+    }
+
+    if !dotnet_version.pre.is_empty() {
+        env_variables.push((
+            "DOTNET_ROLL_FORWARD_TO_PRERELEASE".to_string(),
+            "1".to_string(),
+        ));
+        println!("SDK is a pre-release, setting DOTNET_ROLL_FORWARD_TO_PRERELEASE=1");
+    }
 
     let fsautocomplete_path = PathBuf::from(format!(
         // The dotnet command has the permissions to read the full path
@@ -197,5 +238,8 @@ pub fn acquire_fsac(language_server_id: &zed::LanguageServerId, worktree: &Workt
         &selected_tmf,
     ));
 
-    Ok(fsautocomplete_path)
+    Ok(FsacAcquisition {
+        fsac_path: fsautocomplete_path,
+        env: env_variables,
+    })
 }

@@ -7,7 +7,7 @@ use zed_extension_api::{
 };
 
 mod fsac;
-use fsac::acquire_fsac;
+use fsac::{acquire_fsac, FsacAcquisition};
 
 struct FsharpExtension {}
 
@@ -17,19 +17,36 @@ struct FsAutocompleteInitOptions {
     automatic_workspace_init: bool,
 }
 
-fn get_fsac_path(
+fn get_custom_args(settings_object: Option<&Map<String, Value>>) -> Vec<String> {
+    if let Some(args) = settings_object
+        .and_then(|s| s.get("fsac_custom_args"))
+        .and_then(|v| v.as_array())
+    {
+        args.iter()
+            .filter_map(|v| v.as_str().map(String::from))
+            .collect()
+    } else {
+        Vec::new()
+    }
+}
+
+fn get_fsac_acquisition(
     settings_object: Option<&Map<String, Value>>,
     worktree: &zed::Worktree,
     language_server_id: &zed::LanguageServerId,
-) -> zed::Result<PathBuf> {
+    custom_args: &Vec<String>,
+) -> zed::Result<FsacAcquisition> {
     if let Some(custom_path) = settings_object
         .and_then(|s| s.get("fsac_custom_path"))
         .and_then(|v| v.as_str())
     {
-        Ok(PathBuf::from(custom_path))
+        Ok(FsacAcquisition {
+            fsac_path: PathBuf::from(custom_path),
+            env: Default::default(),
+        })
     } else {
-        match acquire_fsac(language_server_id, worktree) {
-            Ok(fsac_path) => Ok(fsac_path),
+        match acquire_fsac(language_server_id, worktree, custom_args) {
+            Ok(acquisition) => Ok(acquisition),
             Err(e) => {
                 zed::set_language_server_installation_status(
                     language_server_id,
@@ -41,20 +58,9 @@ fn get_fsac_path(
     }
 }
 
-fn get_final_args(fsac_path: PathBuf, settings_object: Option<&Map<String, Value>>) -> Vec<String> {
-    let mut custom_args = if let Some(args) = settings_object
-        .and_then(|s| s.get("fsac_custom_args"))
-        .and_then(|v| v.as_array())
-    {
-        args.iter()
-            .filter_map(|v| v.as_str().map(String::from))
-            .collect()
-    } else {
-        Vec::new()
-    };
-
+fn get_final_args(fsac_path: PathBuf, custom_args: &[String]) -> Vec<String> {
     let mut final_args = vec![fsac_path.to_string_lossy().to_string()];
-    final_args.append(&mut custom_args);
+    final_args.extend_from_slice(custom_args);
     final_args.push("--adaptive-lsp-server-enabled".to_string());
     final_args
 }
@@ -87,13 +93,20 @@ impl zed::Extension for FsharpExtension {
         let settings = LspSettings::for_worktree(language_server_id.as_ref(), worktree)?.settings;
         let settings_object = settings.as_ref().and_then(|v| v.as_object());
 
-        let fsac_path = get_fsac_path(settings_object, worktree, language_server_id)?;
-        let final_args = get_final_args(fsac_path, settings_object);
+        let custom_args = get_custom_args(settings_object);
+        let acquisition = get_fsac_acquisition(
+            settings_object,
+            worktree,
+            language_server_id,
+            &custom_args,
+        )?;
+
+        let final_args = get_final_args(acquisition.fsac_path, &custom_args);
 
         Ok(zed::Command {
             command: dotnet_path,
             args: final_args,
-            env: Default::default(),
+            env: acquisition.env,
         })
     }
 
