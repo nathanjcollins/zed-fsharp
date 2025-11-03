@@ -157,10 +157,6 @@ fn select_compatible_tmfs(
     }
 }
 
-fn tfm_for_sdk_version(version: &Version) -> String {
-    format!("net{}.0", version.major)
-}
-
 pub fn acquire_fsac(
     language_server_id: &zed::LanguageServerId,
     worktree: &Worktree,
@@ -203,7 +199,7 @@ pub fn acquire_fsac(
 
     let selected_tmf = select_compatible_tmfs(&dotnet_version, &available_tmfs)?;
 
-    let sdk_tfm = tfm_for_sdk_version(&dotnet_version);
+    let sdk_tfm = format!("net{}.0", &dotnet_version.major);
 
     let has_user_roll_forward = custom_args.iter().any(|a| a == "--roll-forward");
     let has_user_fx_version = custom_args.iter().any(|a| a == "--fx-version");
