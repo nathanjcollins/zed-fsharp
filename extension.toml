@@ -1,9 +1,9 @@
 id = "fsharp"
 name = "F#"
 description = "F# language support for Zed"
-version = "0.0.7"
+version = "0.0.8"
 schema_version = 1
-authors = ["Nathan Collins <nathjcollins@gmail.com>"]
+authors = ["Nathan Collins <me@nathancollins.dev>"]
 repository = "https://github.com/nathanjcollins/zed-fsharp"
 
 [settings]
