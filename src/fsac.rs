@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use semver::Version;
 use zed_extension_api::http_client::{HttpMethod, HttpRequest};
-use zed_extension_api::{self as zed, EnvVars, Os, Worktree, LanguageServerInstallationStatus,serde_json, DownloadedFileType};
+use zed_extension_api::{
+    self as zed, serde_json, DownloadedFileType, EnvVars, LanguageServerInstallationStatus, Os,
+    Worktree,
+};
 
 pub struct FsacAcquisition {
     pub fsac_path: PathBuf,
@@ -69,10 +72,21 @@ fn get_extension_home(os: &Os, env_vars: &EnvVars) -> Option<PathBuf> {
                     value
                 ))
             }),
-        Os::Linux => env_vars
-            .iter()
-            .find(|(key, _)| key == "XDG_DATA_HOME")
-            .map(|(_, value)| PathBuf::from(format!("{}/Zed/extensions/work/fsharp", value))),
+        Os::Linux => {
+            let found = env_vars.iter().find(|(key, _)| key == "XDG_DATA_HOME");
+            if found.is_some() {
+                found.map(|(_, value)| {
+                    PathBuf::from(format!("{}/zed/extensions/work/fsharp", value))
+                })
+            } else {
+                env_vars
+                    .iter()
+                    .find(|(key, _)| key == "HOME")
+                    .map(|(_, value)| {
+                        PathBuf::from(format!("{}/.local/share/zed/extensions/work/fsharp", value))
+                    })
+            }
+        }
     }
 }
 
@@ -174,7 +188,10 @@ pub fn acquire_fsac(
         .cloned()
         .ok_or("No Versions Found")?;
     if !PathBuf::from(format!("fsautocomplete_{}", &last_version)).exists() {
-        println!("fsautocomplete version {} not found locally. Downloading...", &last_version);
+        println!(
+            "fsautocomplete version {} not found locally. Downloading...",
+            &last_version
+        );
         zed::set_language_server_installation_status(
             language_server_id,
             &LanguageServerInstallationStatus::Downloading,
@@ -187,7 +204,10 @@ pub fn acquire_fsac(
             &last_version
         );
     }
-    zed::set_language_server_installation_status(language_server_id, &LanguageServerInstallationStatus::None);
+    zed::set_language_server_installation_status(
+        language_server_id,
+        &LanguageServerInstallationStatus::None,
+    );
 
     let extension_home = get_extension_home(&os, &worktree.shell_env())
         .ok_or("Failed to determine extension home")?;
@@ -195,7 +215,6 @@ pub fn acquire_fsac(
     let dotnet_version = get_current_dotnet_version()?;
 
     let available_tmfs = get_fsac_tmfs_path(&last_version)?;
-
 
     let selected_tmf = select_compatible_tmfs(&dotnet_version, &available_tmfs)?;
 
