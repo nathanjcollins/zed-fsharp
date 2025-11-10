@@ -57,39 +57,6 @@ fn download_fsautocomplete_version(version: &String) -> zed::Result<(), String> 
     zed::download_file(&download_url, &file_path, file_type)
 }
 
-fn get_extension_home(os: &Os, env_vars: &EnvVars) -> Option<PathBuf> {
-    match os {
-        Os::Windows => env_vars
-            .iter()
-            .find(|(key, _)| key == "LOCALAPPDATA")
-            .map(|(_, value)| PathBuf::from(format!("{}/Zed/extensions/work/fsharp", value))),
-        Os::Mac => env_vars
-            .iter()
-            .find(|(key, _)| key == "HOME")
-            .map(|(_, value)| {
-                PathBuf::from(format!(
-                    "{}/Library/Application Support/Zed/extensions/work/fsharp",
-                    value
-                ))
-            }),
-        Os::Linux => {
-            let found = env_vars.iter().find(|(key, _)| key == "XDG_DATA_HOME");
-            if found.is_some() {
-                found.map(|(_, value)| {
-                    PathBuf::from(format!("{}/zed/extensions/work/fsharp", value))
-                })
-            } else {
-                env_vars
-                    .iter()
-                    .find(|(key, _)| key == "HOME")
-                    .map(|(_, value)| {
-                        PathBuf::from(format!("{}/.local/share/zed/extensions/work/fsharp", value))
-                    })
-            }
-        }
-    }
-}
-
 fn get_current_dotnet_version() -> zed::Result<Version> {
     let output = zed::Command {
         command: "dotnet".to_string(),
@@ -209,8 +176,8 @@ pub fn acquire_fsac(
         &LanguageServerInstallationStatus::None,
     );
 
-    let extension_home = get_extension_home(&os, &worktree.shell_env())
-        .ok_or("Failed to determine extension home")?;
+    let extension_home =
+        std::env::current_dir().map_err(|err| format!("could not get current dir: {err}"))?;
 
     let dotnet_version = get_current_dotnet_version()?;
 
