@@ -1,7 +1,7 @@
 name = "FSharp"
 code_fence_block_name = "fsharp"
 grammar = "fsharp"
-path_suffixes = ["fs", "fsx", "fsi"]
+path_suffixes = ["fs", "fsx", "fsi", "fsscript"]
 line_comments = ["// ", "/// "]
 autoclose_before = ";:.,=}])>"
 brackets = [
