@@ -1,0 +1,16 @@
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  homebrew:
+    name: Release Zed Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huacnlee/zed-extension-action@v2
+        with:
+          extension-name: fsharp
+          push-to: nathanjcollins/zed-fsharp
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
