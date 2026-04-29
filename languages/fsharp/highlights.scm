@@ -67,8 +67,7 @@
 (namespace
   name: (_) @module)
 (module_defn
-  .
-  (_) @module)
+  (identifier) @module)
 
 (ce_expression
   .
