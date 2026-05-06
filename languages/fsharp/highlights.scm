@@ -67,8 +67,7 @@
 (namespace
   name: (_) @module)
 (module_defn
-  .
-  (_) @module)
+  (identifier) @module)
 
 (ce_expression
   .
@@ -210,6 +209,7 @@
 [
   ","
   ";"
+  ":"
 ] @punctuation.delimiter
 
 [
@@ -348,7 +348,9 @@
  (#any-of? @type.builtin "bool" "byte" "sbyte" "int16" "uint16" "int" "uint" "int64" "uint64" "nativeint" "unativeint" "decimal" "float" "double" "float32" "single" "char" "string" "unit"))
 
 (const
-  (unit) @constant)
+  (unit) @punctuation.bracket)
+(const_pattern
+  (unit) @punctuation.bracket)
 
 (preproc_if
   [
