@@ -15,6 +15,15 @@ struct FsharpExtension {}
 #[serde(rename_all = "PascalCase")]
 struct FsAutocompleteInitOptions {
     automatic_workspace_init: bool,
+    tooltip_show_documentation_link: bool,
+    unused_opens_analyzer: bool,
+    unused_declarations_analyzer: bool,
+    add_private_access_modifier: bool,
+    external_autocomplete: bool,
+    interface_stub_generation: bool,
+    abstract_class_stub_generation: bool,
+    union_case_stub_generation: bool,
+    record_stub_generation: bool,
 }
 
 fn get_custom_args(settings_object: Option<&Map<String, Value>>) -> Vec<String> {
@@ -60,8 +69,15 @@ fn get_fsac_acquisition(
 
 fn get_final_args(fsac_path: PathBuf, custom_args: &[String]) -> Vec<String> {
     let mut final_args = vec![fsac_path.to_string_lossy().to_string()];
-    final_args.extend_from_slice(custom_args);
-    final_args.push("--adaptive-lsp-server-enabled".to_string());
+    for arg in custom_args
+        .iter()
+        .cloned()
+        .chain(std::iter::once("--adaptive-lsp-server-enabled".to_string()))
+    {
+        if !final_args.contains(&arg) {
+            final_args.push(arg);
+        }
+    }
     final_args
 }
 
@@ -112,14 +128,47 @@ impl zed::Extension for FsharpExtension {
 
     fn language_server_initialization_options(
         &mut self,
-        _language_server_id: &zed::LanguageServerId,
-        _worktree: &zed::Worktree,
+        language_server_id: &zed::LanguageServerId,
+        worktree: &zed::Worktree,
     ) -> zed::Result<Option<zed::serde_json::Value>> {
         let initialization_options = FsAutocompleteInitOptions {
             automatic_workspace_init: true,
+            // Zed does not support info panel so documentation links are not shown
+            tooltip_show_documentation_link: false,
+            unused_opens_analyzer: true,
+            unused_declarations_analyzer: true,
+            add_private_access_modifier: true,
+            external_autocomplete: false,
+            interface_stub_generation: true,
+            abstract_class_stub_generation: true,
+            union_case_stub_generation: true,
+            record_stub_generation: true,
         };
 
-        Ok(Some(serde_json::json!(initialization_options)))
+        // Defaults deep-merged with the user's lsp.fsautocomplete.initialization_options —
+        // user keys win per key, so setting one option doesn't wipe the defaults.
+        let mut options = serde_json::json!(initialization_options);
+        if let Some(user_options) = LspSettings::for_worktree(language_server_id.as_ref(), worktree)
+            .ok()
+            .and_then(|settings| settings.initialization_options)
+        {
+            merge(&mut options, user_options);
+        }
+
+        Ok(Some(options))
+    }
+}
+
+/// Recursively overlay `overlay` onto `base`; objects merge per key,
+/// everything else is replaced by the overlay value.
+fn merge(base: &mut Value, overlay: Value) {
+    match (base, overlay) {
+        (Value::Object(base_map), Value::Object(overlay_map)) => {
+            for (key, value) in overlay_map {
+                merge(base_map.entry(key).or_insert(Value::Null), value);
+            }
+        }
+        (base_slot, overlay) => *base_slot = overlay,
     }
 }
 
