@@ -1,82 +1,58 @@
-; Namespaces
-((namespace
+; Zed outline query — powers the outline panel, breadcrumbs, and in-file
+; symbol search. `let_binding` only matches declaration-position lets
+; (module/class level); local lets are `let_decl_indented`, deliberately
+; excluded to keep the outline at API altitude.
+
+(xml_doc_comment) @annotation
+(block_doc_comment) @annotation
+
+(namespace_decl
+  "namespace" @context
   name: (long_identifier) @name) @item
- (#set! "kind" "namespace"))
 
-; Named modules
-((named_module
+(module_decl
+  "module" @context
   name: (long_identifier) @name) @item
- (#set! "kind" "module"))
 
-; Module definitions  
-((module_defn
-  (identifier) @name) @item
- (#set! "kind" "module"))
+(type_decl
+  "type" @context
+  name: (identifier) @name) @item
 
-; Type definitions - Record types
-((type_definition
-  (record_type_defn
-    (type_name (identifier) @name))) @item
- (#set! "kind" "struct"))
+(type_and_decl
+  "and" @context
+  name: (identifier) @name) @item
 
-; Type definitions - Union types
-((type_definition
-  (union_type_defn
-    (type_name (identifier) @name))) @item
- (#set! "kind" "enum"))
+(exception_decl
+  "exception" @context
+  name: (identifier) @name) @item
 
-; Type definitions - Enum types
-((type_definition
-  (enum_type_defn
-    (type_name (identifier) @name))) @item
- (#set! "kind" "enum"))
+(union_case
+  name: (identifier) @name) @item
 
-; Type definitions - Anonymous types (classes/interfaces)
-((type_definition
-  (anon_type_defn
-    (type_name (identifier) @name))) @item
- (#set! "kind" "class"))
+(enum_case
+  name: (identifier) @name) @item
 
-; Type definitions - Type abbreviations
-((type_definition
-  (type_abbrev_defn
-    (type_name (identifier) @name))) @item
- (#set! "kind" "type"))
+(record_type_field
+  name: (identifier) @name) @item
 
-; Type definitions - Delegate types
-((type_definition
-  (delegate_type_defn
-    (type_name (identifier) @name))) @item
- (#set! "kind" "interface"))
+(let_binding
+  "let" @context
+  "rec"? @context
+  name: [(identifier) (operator_name) (active_pattern_name)] @name) @item
 
-; Function definitions (let bindings)
-((value_declaration
-  (function_or_value_defn
-    (function_declaration_left
-      (identifier) @name))) @item
- (#set! "kind" "function"))
+(let_and_binding
+  "and" @context
+  name: (identifier) @name) @item
 
-; Value definitions (let bindings)
-((value_declaration
-  (function_or_value_defn
-    (value_declaration_left
-      (identifier_pattern
-        (long_identifier
-          (identifier) @name))))) @item
- (#set! "kind" "variable"))
+(member_defn
+  "static"? @context
+  ["member" "override" "default"] @context
+  name: (identifier) @name) @item
 
-; Member definitions - methods and properties
-((member_defn
-  (member_signature
-    (identifier) @name)) @item
- (#set! "kind" "method"))
+(abstract_member_defn
+  "abstract" @context
+  name: (identifier) @name) @item
 
-; Union type cases
-((union_type_case
-  (identifier) @name) @item
- (#set! "kind" "variant"))
-
-; Enum type cases
-((enum_type_case
-  (identifier) @name) @item
- (#set! "kind" "variant"))
+(val_field
+  "val" @context
+  name: (identifier) @name) @item

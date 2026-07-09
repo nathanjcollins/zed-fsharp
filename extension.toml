@@ -15,8 +15,8 @@ name = "fsautocomplete"
 language = "FSharp"
 
 [grammars.fsharp]
-repository = "https://github.com/ionide/tree-sitter-fsharp"
-commit = "c4347939b4fb439771dc2561a6923fba6a78251b"
+repository = "https://github.com/MangelMaxime/tree-sitter-fsharp"
+commit = "7e76f4f826bf936a5da3808e3f29c225d1d5ca6e"
 
 [[capabilities]]
 kind = "process:exec"
