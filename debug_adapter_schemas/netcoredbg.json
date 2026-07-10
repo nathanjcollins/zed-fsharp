@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "netcoredbg debug configuration",
+  "description": "Configuration for debugging .NET applications with netcoredbg",
+  "type": "object",
+  "required": ["request"],
+  "properties": {
+    "request": {
+      "type": "string",
+      "enum": ["launch", "attach"],
+      "description": "'launch' starts the program under the debugger, 'attach' connects to an already running process"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "request": {
+            "const": "launch"
+          }
+        }
+      },
+      "then": {
+        "required": ["program"],
+        "properties": {
+          "program": {
+            "type": "string",
+            "description": "Path to the assembly to debug (e.g. bin/Debug/net9.0/MyApp.dll). netcoredbg runs it with the `dotnet` host."
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Command line arguments passed to the program"
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Working directory of the launched program. Defaults to the worktree root.",
+            "default": "$ZED_WORKTREE_ROOT"
+          },
+          "env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "description": "Environment variables for the launched program"
+          },
+          "stopAtEntry": {
+            "type": "boolean",
+            "default": false,
+            "description": "Break at the program entry point"
+          },
+          "justMyCode": {
+            "type": "boolean",
+            "default": true,
+            "description": "Only step through and break in user code, skipping framework and library code"
+          },
+          "enableStepFiltering": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically step over properties and operators"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "request": {
+            "const": "attach"
+          }
+        }
+      },
+      "then": {
+        "required": ["processId"],
+        "properties": {
+          "processId": {
+            "type": ["integer", "string"],
+            "description": "Id of the .NET process to attach to"
+          }
+        }
+      }
+    }
+  ]
+}
