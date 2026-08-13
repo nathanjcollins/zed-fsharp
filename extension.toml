@@ -16,7 +16,7 @@ language = "FSharp"
 
 [grammars.fsharp]
 repository = "https://github.com/MangelMaxime/tree-sitter-fsharp"
-commit = "07096f2fc48830a909188bb25ad6eeb534ac0347"
+commit = "9a25666413c1791877fbc53c80935f63f2fec204"
 
 [[capabilities]]
 kind = "process:exec"
