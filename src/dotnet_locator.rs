@@ -160,8 +160,14 @@ fn parse_build_task(build_task: &TaskTemplate) -> zed::Result<ParsedBuildTask> {
             (None, true) => args.next().cloned(),
             (None, false) => None,
         };
-        if let (Some(property), Some(value)) = (property, value) {
-            properties.push(format!("-p:{property}={value}"));
+        if let Some(property) = property {
+            if let Some(value) = value {
+                properties.push(format!("-p:{property}={value}"));
+            }
+        } else if matches!(option, "-p" | "--property") {
+            if let Some(value) = value {
+                properties.push(format!("-p:{value}"));
+            }
         } else if arg.starts_with("-p:") || arg.starts_with("/p:") {
             properties.push(arg.clone());
         } else if !arg.starts_with('-') && !takes_value && project.is_none() {
