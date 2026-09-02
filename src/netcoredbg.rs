@@ -77,17 +77,28 @@ pub fn get_dap_binary(
 
     let netcoredbg_path = match user_provided_debug_adapter_path {
         Some(user_path) => user_path,
-        None => match cached_path
-            .clone()
-            .filter(|path| PathBuf::from(path).exists())
-        {
-            Some(path) => path,
-            None => {
-                let path = acquire_netcoredbg()?;
-                *cached_path = Some(path.clone());
-                path
-            }
-        },
+        None => {
+            // The sandbox only grants access to paths relative to the extension
+            // work directory, so the cache is keyed on the relative path and the
+            // absolute one is built only for the command handed to Zed.
+            let relative_path = match cached_path
+                .clone()
+                .filter(|path| PathBuf::from(path).exists())
+            {
+                Some(path) => path,
+                None => {
+                    let path = acquire_netcoredbg()?;
+                    *cached_path = Some(path.clone());
+                    path
+                }
+            };
+            let extension_home = std::env::current_dir()
+                .map_err(|err| format!("could not get current dir: {err}"))?;
+            extension_home
+                .join(relative_path)
+                .to_string_lossy()
+                .to_string()
+        }
     };
 
     Ok(DebugAdapterBinary {
@@ -268,8 +279,8 @@ fn find_newest_local_netcoredbg(executable_name: &str) -> Option<PathBuf> {
     })
 }
 
-/// Returns the absolute path to a netcoredbg executable, downloading the latest
-/// GitHub release into the extension work directory if it isn't present yet.
+/// Returns the path of a netcoredbg executable relative to the extension work
+/// directory, downloading the latest GitHub release if it isn't present yet.
 /// When the release check fails, falls back to a previously downloaded version.
 fn acquire_netcoredbg() -> zed::Result<String> {
     let (os, arch) = zed::current_platform();
@@ -321,11 +332,5 @@ fn acquire_netcoredbg() -> zed::Result<String> {
     zed::make_file_executable(&executable_path.to_string_lossy())
         .map_err(|e| format!("Failed to make netcoredbg executable: {}", e))?;
 
-    let extension_home =
-        std::env::current_dir().map_err(|err| format!("could not get current dir: {err}"))?;
-
-    Ok(extension_home
-        .join(executable_path)
-        .to_string_lossy()
-        .to_string())
+    Ok(executable_path.to_string_lossy().to_string())
 }
