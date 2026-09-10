@@ -14,11 +14,19 @@ fsac_custom_arguments = { type = "array", items = "string", default = [], descri
 name = "fsautocomplete"
 language = "FSharp"
 
+# Schema defaults to debug_adapter_schemas/netcoredbg.json
+[debug_adapters.netcoredbg]
+
+# Converts `dotnet run` tasks into netcoredbg debug scenarios
+[debug_locators.dotnet]
+
 [grammars.fsharp]
 repository = "https://github.com/MangelMaxime/tree-sitter-fsharp"
 commit = "dd0f511f2a5e33daa27c4a0f72e288c78f587f14"
 
+# `*` matches a single argument; `**` allows any trailing arguments.
+# The locator needs multi-argument invocations like `dotnet msbuild <project> -getProperty:TargetPath`.
 [[capabilities]]
 kind = "process:exec"
 command = "dotnet"
-args = ["*"]
+args = ["**"]

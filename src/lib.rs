@@ -3,13 +3,19 @@ use zed_extension_api::{
     self as zed,
     serde_json::{self, Map, Value},
     settings::LspSettings,
-    LanguageServerInstallationStatus,
+    DebugAdapterBinary, DebugConfig, DebugRequest, DebugScenario, DebugTaskDefinition,
+    LanguageServerInstallationStatus, StartDebuggingRequestArgumentsRequest, TaskTemplate,
+    Worktree,
 };
 
+mod dotnet_locator;
 mod fsac;
+mod netcoredbg;
 use fsac::{acquire_fsac, FsacAcquisition};
 
-struct FsharpExtension {}
+struct FsharpExtension {
+    cached_netcoredbg_path: Option<String>,
+}
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -86,7 +92,9 @@ impl zed::Extension for FsharpExtension {
     where
         Self: Sized,
     {
-        Self {}
+        Self {
+            cached_netcoredbg_path: None,
+        }
     }
 
     fn language_server_command(
@@ -156,6 +164,58 @@ impl zed::Extension for FsharpExtension {
         }
 
         Ok(Some(options))
+    }
+
+    fn get_dap_binary(
+        &mut self,
+        adapter_name: String,
+        config: DebugTaskDefinition,
+        user_provided_debug_adapter_path: Option<String>,
+        worktree: &Worktree,
+    ) -> zed::Result<DebugAdapterBinary> {
+        netcoredbg::get_dap_binary(
+            &mut self.cached_netcoredbg_path,
+            &adapter_name,
+            config,
+            user_provided_debug_adapter_path,
+            worktree,
+        )
+    }
+
+    fn dap_request_kind(
+        &mut self,
+        adapter_name: String,
+        config: Value,
+    ) -> zed::Result<StartDebuggingRequestArgumentsRequest> {
+        netcoredbg::request_kind(&adapter_name, &config)
+    }
+
+    fn dap_config_to_scenario(&mut self, config: DebugConfig) -> zed::Result<DebugScenario> {
+        netcoredbg::config_to_scenario(config)
+    }
+
+    fn dap_locator_create_scenario(
+        &mut self,
+        locator_name: String,
+        build_task: TaskTemplate,
+        resolved_label: String,
+        debug_adapter_name: String,
+    ) -> Option<DebugScenario> {
+        if locator_name != dotnet_locator::LOCATOR_NAME {
+            return None;
+        }
+        dotnet_locator::create_scenario(build_task, &resolved_label, &debug_adapter_name)
+    }
+
+    fn run_dap_locator(
+        &mut self,
+        locator_name: String,
+        build_task: TaskTemplate,
+    ) -> zed::Result<DebugRequest> {
+        if locator_name != dotnet_locator::LOCATOR_NAME {
+            return Err(format!("Unknown debug locator: {locator_name}"));
+        }
+        dotnet_locator::run_locator(build_task)
     }
 }
 
