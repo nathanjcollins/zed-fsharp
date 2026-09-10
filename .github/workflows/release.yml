@@ -2,6 +2,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to release (e.g. v0.0.12)"
+        required: true
+        type: string
 
 jobs:
   homebrew:
@@ -11,6 +17,7 @@ jobs:
       - uses: huacnlee/zed-extension-action@v2
         with:
           extension-name: fsharp
-          push-to: nathanjcollins/zed-fsharp
+          push-to: nathanjcollins/zed-extensions
+          tag: ${{ inputs.tag }}
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
