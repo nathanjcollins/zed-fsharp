@@ -1,6 +1,6 @@
-; Zed override query — defines the scopes consumed by config.toml's `not_in`
+; Zed override query - defines the scopes consumed by config.toml's `not_in`
 ; bracket guards (quote autoclose off inside strings; comments keep autoclose,
-; matching Zed's Python/Rust convention — quotes in comments are usually balanced).
+; matching Zed's Python/Rust convention - quotes in comments are usually balanced).
 
 [
   (line_comment)

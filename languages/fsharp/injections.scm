@@ -1,4 +1,4 @@
-; Zed injection query — mirrors ../injections.scm (Helix); Zed accepts the
+; Zed injection query - mirrors ../injections.scm (Helix); Zed accepts the
 ; same standard captures/properties. Keep the shared rules in sync.
 
 ; (** … *) doc comments hold markdown.

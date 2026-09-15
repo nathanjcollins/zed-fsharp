@@ -1,4 +1,4 @@
-; Zed outline query — powers the outline panel, breadcrumbs, and in-file
+; Zed outline query - powers the outline panel, breadcrumbs, and in-file
 ; symbol search. `let_binding` only matches declaration-position lets
 ; (module/class level); local lets are `let_decl_indented`, deliberately
 ; excluded to keep the outline at API altitude.
