@@ -1,5 +1,7 @@
 This is a basic extension for Zed to enable F# features.
 
+It also adds the `F# Project File` language for `.fsproj` files, with syntax highlighting and `Restore Current Project` / `Build Current Project` tasks.
+
 ## Installation
 
 Inside your [plugin directory](https://zed.dev/docs/extensions/installing-extensions#installation-location), run:

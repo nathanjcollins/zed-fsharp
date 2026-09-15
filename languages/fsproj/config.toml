@@ -1,0 +1,6 @@
+name = "F# Project File"
+grammar = "xml"
+path_suffixes = ["fsproj"]
+block_comment = ["<!-- ", " -->"]
+autoclose_before = "<"
+brackets = [{ start = "<", end = ">", close = true, newline = true }]

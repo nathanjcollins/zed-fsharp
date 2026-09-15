@@ -18,6 +18,11 @@ language = "FSharp"
 repository = "https://github.com/MangelMaxime/tree-sitter-fsharp"
 commit = "dd0f511f2a5e33daa27c4a0f72e288c78f587f14"
 
+[grammars.xml]
+repository = "https://github.com/tree-sitter-grammars/tree-sitter-xml"
+commit = "863dbc381f44f6c136a399e684383b977bb2beaa"
+path = "xml"
+
 [[capabilities]]
 kind = "process:exec"
 command = "dotnet"
