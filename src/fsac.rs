@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use semver::Version;
 use zed_extension_api::http_client::{HttpMethod, HttpRequest};
 use zed_extension_api::{
-    self as zed, serde_json, DownloadedFileType, EnvVars, LanguageServerInstallationStatus, Os,
+    self as zed, serde_json, DownloadedFileType, EnvVars, LanguageServerInstallationStatus,
     Worktree,
 };
 
@@ -30,7 +30,7 @@ fn fetch_fsautocomplete_versions() -> zed::Result<PackageVersionList> {
 
     let package_versions: PackageVersionList =
         serde_json::from_slice(&response.body).map_err(|e| {
-            let body = &str::from_utf8(&response.body).unwrap_or("");
+            let body = std::str::from_utf8(&response.body).unwrap_or("");
             format!(
                 "Error: {}\nFailed to parse fsautocomplete versions JSON: {}",
                 e.to_string(),
@@ -143,8 +143,6 @@ pub fn acquire_fsac(
     worktree: &Worktree,
     custom_args: &Vec<String>,
 ) -> zed::Result<FsacAcquisition> {
-    let (os, _) = zed::current_platform();
-
     zed::set_language_server_installation_status(
         language_server_id,
         &LanguageServerInstallationStatus::CheckingForUpdate,

@@ -189,6 +189,12 @@
 (block_comment) @comment
 (block_doc_comment) @comment.doc
 
+; A lowercase identifier is a value unless a more specific rule below marks it
+; as a function, parameter, property, keyword, type, or constructor. Zed does
+; not load locals.scm, so this also gives ordinary value references a scope.
+((identifier) @variable
+ (#match? @variable "^[a-z_]"))
+
 (int_literal) @number
 (float_literal) @number
 (char_literal) @constant
@@ -226,40 +232,35 @@
 
 (let_binding
   name: (identifier) @function
-  parameters: (parameter
-    (identifier) @variable.parameter)*)
+  parameters: (parameter)+)
 
 (let_binding
   name: (operator_name) @function
-  parameters: (parameter
-    (identifier) @variable.parameter)*)
+  parameters: (parameter)+)
 
 (let_decl_indented
   name: (active_pattern_name) @function)
 
 (let_decl_indented
   name: (identifier) @function
-  parameters: (parameter
-    (identifier) @variable.parameter)*)
+  parameters: (parameter)+)
 
 (let_decl_indented
   name: (operator_name) @function
-  parameters: (parameter
-    (identifier) @variable.parameter)*)
+  parameters: (parameter)+)
 
 ; `let x = … in …` (explicit-`in` form) puts the binding name directly on
 ; let_expression (not a let_decl_indented child), so it needs its own rule.
 (let_expression
   name: (identifier) @function
-  parameters: (parameter
-    (identifier) @variable.parameter)*)
+  parameters: (parameter)+)
 
 ; A lowercase identifier in an `identifier_pattern` is a value BINDING — the
 ; names introduced by `match`/`function`/`fun`/`let` patterns (`Some v`,
 ; `Pick [ key ] [ value ]`, `h :: t`). Colour them @variable. The `^[a-z_]`
 ; guard leaves the Capitalised constructor head (`Some`, `Pick`) to the
 ; @constructor rule below. Placed BEFORE the let-tuple-destructure rules so
-; those still override these to @function for `let (a, b) = …` (last-wins).
+; those still override these for tuple-destructured value bindings (last-wins).
 ((identifier_pattern (long_identifier (identifier) @variable))
  (#match? @variable "^[a-z_]"))
 
@@ -269,7 +270,7 @@
 ; Type-annotated for-loop binder name (`for s: string in`, `for k: T, r: T in`) —
 ; the bare `tuple_typed_pattern` isn't nested in `identifier_pattern`, so colour its
 ; bound name @variable here. Scoped to `for_expression` so it doesn't affect the
-; let-tuple form (`let (a: int, b)`, coloured @function elsewhere).
+; let-tuple form (`let (a: int, b)`, coloured @variable below).
 ((for_expression (tuple_typed_pattern pattern: (long_identifier (identifier) @variable)))
  (#match? @variable "^[a-z_]"))
 
@@ -280,49 +281,46 @@
  (#match? @variable "^[a-z_]"))
 
 ; Tuple-destructured binding names — `let a, b, c = …` (and `let (a, b) = …`).
-; Colour them like the single-name binding form so destructured bindings don't
-; render uncoloured. The unparenthesized form holds the names as direct
+; Colour them as values; these bindings have no function parameters. The
+; unparenthesized form holds the names as direct
 ; long_identifiers; the parenthesized form nests them in identifier_pattern.
 (let_binding
-  name: (unparenthesized_tuple_pattern (long_identifier (identifier) @function)))
+  name: (unparenthesized_tuple_pattern (long_identifier (identifier) @variable)))
 (let_decl_indented
-  name: (unparenthesized_tuple_pattern (long_identifier (identifier) @function)))
+  name: (unparenthesized_tuple_pattern (long_identifier (identifier) @variable)))
 ; Parenthesized form nests each element in identifier_pattern; the lowercase
 ; guard keeps a constructor element (`let (Some a, b) = …`) from being recoloured.
 (let_binding
-  name: (tuple_pattern (pattern (identifier_pattern (long_identifier (identifier) @function))))
-  (#match? @function "^[a-z_]"))
+  name: (tuple_pattern (pattern (identifier_pattern (long_identifier (identifier) @variable))))
+  (#match? @variable "^[a-z_]"))
 (let_decl_indented
-  name: (tuple_pattern (pattern (identifier_pattern (long_identifier (identifier) @function))))
-  (#match? @function "^[a-z_]"))
+  name: (tuple_pattern (pattern (identifier_pattern (long_identifier (identifier) @variable))))
+  (#match? @variable "^[a-z_]"))
 ; Typed-first tuple destructuring `let (a: int, b: string) = …` / `let! (a: T, b) = …`.
 ; Type-annotated elements are `tuple_typed_pattern`; untyped later elements nest
 ; in identifier_pattern. Colour both like the other destructured binding names.
 (let_binding
   name: (tuple_typed_first_pattern
-          (tuple_typed_pattern pattern: (long_identifier (identifier) @function)))
-  (#match? @function "^[a-z_]"))
+          (tuple_typed_pattern pattern: (long_identifier (identifier) @variable)))
+  (#match? @variable "^[a-z_]"))
 (let_binding
   name: (tuple_typed_first_pattern
-          (pattern (identifier_pattern (long_identifier (identifier) @function))))
-  (#match? @function "^[a-z_]"))
+          (pattern (identifier_pattern (long_identifier (identifier) @variable))))
+  (#match? @variable "^[a-z_]"))
 (let_decl_indented
   name: (tuple_typed_first_pattern
-          (tuple_typed_pattern pattern: (long_identifier (identifier) @function)))
-  (#match? @function "^[a-z_]"))
+          (tuple_typed_pattern pattern: (long_identifier (identifier) @variable)))
+  (#match? @variable "^[a-z_]"))
 (let_decl_indented
   name: (tuple_typed_first_pattern
-          (pattern (identifier_pattern (long_identifier (identifier) @function))))
-  (#match? @function "^[a-z_]"))
+          (pattern (identifier_pattern (long_identifier (identifier) @variable))))
+  (#match? @variable "^[a-z_]"))
 
 (let_and_binding
   name: (identifier) @function
-  parameters: (parameter
-    (identifier) @variable.parameter)*)
+  parameters: (parameter)+)
 
-(lambda_expression
-  (parameter
-    (identifier) @variable.parameter)*)
+(parameter (identifier) @variable.parameter)
 
 ; `tuple_param` is the per-element parameter shape inside `primary_constructor`
 ; and (via `tuple_params`) `secondary_constructor` — e.g. `type C(x: int, y: int)`
@@ -712,13 +710,32 @@
 ; (Capitalised head = @constructor); the `^[a-z_]` guard keeps the two
 ; disjoint, and both `.` anchors exclude dotted heads (`List.map`,
 ; `s.ToUpper`) so module/member colouring is unchanged. Bare references
-; (`x |> isEmpty`) stay uncoloured — without type info a non-applied
-; identifier can't be told apart from a plain value. Placed BEFORE the
+; (`let f = isEmpty`) keep the general @variable colour — without type info a
+; non-applied identifier can't be told apart from a plain value. Placed BEFORE the
 ; raise/failwith and conversion-operator rules below so their more-specific
 ; @function.builtin wins on last-capture resolution.
 ((application_expression
    . (long_identifier . (identifier) @function .))
  (#match? @function "^[a-z_]"))
+
+; A capitalized member name in a dotted call (`exchange.GetPositions()`) is
+; @property when it appears as a plain access. When that same access is the
+; function head of an application, colour the member as a function instead.
+; Handle both 1–2 segment long_identifier heads and longer chains represented
+; as dot_expression nodes.
+(application_expression
+  .
+  [
+    (long_identifier . (identifier) (identifier) @function .)
+    (dot_expression member: (identifier) @function)
+    (type_application_expression
+      (long_identifier . (identifier) (identifier) @function .))
+  ])
+
+; A bare identifier on the receiving side of a pipe is invoked by the pipe.
+; Capture the final segment so `x |> List.isEmpty` colours only `isEmpty`.
+(binary_expression operator: "|>" right: (long_identifier (identifier) @function .))
+(binary_expression left: (long_identifier (identifier) @function .) operator: "<|")
 
 ; Type name in new expressions (not wrapped in type_expression so needs its own capture)
 (new_expression (long_identifier) @type)
@@ -730,13 +747,13 @@
 
 ; Computation expression builder name (async, task, seq, promise, …)
 (computation_expression
-  builder: (long_identifier) @keyword)
+  builder: (long_identifier (identifier) @keyword .))
 
 ; Oxpecker element-DSL builder (`div() { … }`) — the form WITH an `args` field is a
 ; function application (an HTML/element tag), not a CE keyword. Placed after the
 ; rule above so last-match-in-source-order recolours it from @keyword to @function.
 (computation_expression
-  builder: (long_identifier) @function
+  builder: (long_identifier (identifier) @function .)
   args: _)
 
 ; Element-DSL named arguments (HTML attributes / props): the left operand of a

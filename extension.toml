@@ -8,7 +8,7 @@ repository = "https://github.com/nathanjcollins/zed-fsharp"
 
 [settings]
 fsac_custom_path = { type = "string", optional = true, description = "Custom path to fsautocomplete binary" }
-fsac_custom_arguments = { type = "array", items = "string", default = [], description = "Additional arguments for fsautocomplete" }
+fsac_custom_args = { type = "array", items = "string", default = [], description = "Additional arguments for fsautocomplete" }
 
 [language_servers.fsautocomplete]
 name = "fsautocomplete"

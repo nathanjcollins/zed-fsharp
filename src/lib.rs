@@ -15,6 +15,7 @@ struct FsharpExtension {}
 #[serde(rename_all = "PascalCase")]
 struct FsAutocompleteInitOptions {
     automatic_workspace_init: bool,
+    simplify_name_analyzer: bool,
     tooltip_show_documentation_link: bool,
     unused_opens_analyzer: bool,
     unused_declarations_analyzer: bool,
@@ -110,12 +111,8 @@ impl zed::Extension for FsharpExtension {
         let settings_object = settings.as_ref().and_then(|v| v.as_object());
 
         let custom_args = get_custom_args(settings_object);
-        let acquisition = get_fsac_acquisition(
-            settings_object,
-            worktree,
-            language_server_id,
-            &custom_args,
-        )?;
+        let acquisition =
+            get_fsac_acquisition(settings_object, worktree, language_server_id, &custom_args)?;
 
         let final_args = get_final_args(acquisition.fsac_path, &custom_args);
 
@@ -133,6 +130,7 @@ impl zed::Extension for FsharpExtension {
     ) -> zed::Result<Option<zed::serde_json::Value>> {
         let initialization_options = FsAutocompleteInitOptions {
             automatic_workspace_init: true,
+            simplify_name_analyzer: true,
             // Zed does not support info panel so documentation links are not shown
             tooltip_show_documentation_link: false,
             unused_opens_analyzer: true,
